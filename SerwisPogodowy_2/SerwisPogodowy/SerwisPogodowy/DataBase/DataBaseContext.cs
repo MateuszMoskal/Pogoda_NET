@@ -14,7 +14,8 @@ namespace SerwisPogodowy.DataBase
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             base.OnConfiguring(optionsBuilder);
-            string sqlServerName = "DESKTOP-H0MGPLN";
+            //string sqlServerName = "DESKTOP-H0MGPLN";
+            string sqlServerName = "LAPTOP-3840J1OF";
             //string sqlServerName = "Twoja nazwa SQL Servera";
             string dataBaseName = "WeatherService";
 
