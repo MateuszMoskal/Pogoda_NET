@@ -25,25 +25,37 @@
         }
         else
         {
-        <table class="table table-striped table-hover">
-            <thead>
-                <tr>
-                    <th>Miasto</th>
-                    <th>Województwo</th>
-                    <th>Państwo</th>
-                    <th>Długość geograficzna</th>
-                    <th>Szerokość geograficzna</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var city in @Model.Cities)
-                {
+            <table class="table table-striped table-hover">
+                <thead>
                     <tr>
-                        <td>@city.Name</td>
-                        <td>@city.Voivodeship</td>
-                        <td>@city.Country</td>
-                        <td>@city.Longitude</td>
-                        <td>@city.Latitude</td>
+                        <th>Miasto</th>
+                        <th>Województwo</th>
+                        <th>Państwo</th>
+                        <th>Długość geograficzna</th>
+                        <th>Szerokość geograficzna</th>
+                        <th>Akcja</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var city in @Model.Cities)
+                    {
+                        <tr>
+                            <td>@city.Name</td>
+                            <td>@city.Voivodeship</td>
+                            <td>@city.CantryCode</td>
+                            <td>@city.Longitude</td>
+                            <td>@city.Latitude</td>
+                            <td>
+                                @using (Html.BeginForm("AddCity", "City", FormMethod.Post))
+                                {
+                                    @Html.HiddenFor(x => city.Name)
+                                    @Html.HiddenFor(x => city.Voivodeship)
+                                    @Html.HiddenFor(x => city.CantryCode)
+                                    @Html.HiddenFor(x => city.Longitude)
+                                    @Html.HiddenFor(x => city.Latitude)
+                                    <input type="submit" value="Wybierz" class="btn btn-primary" />
+                                }
+                            </td>
                     </tr>
                 }
             </tbody>

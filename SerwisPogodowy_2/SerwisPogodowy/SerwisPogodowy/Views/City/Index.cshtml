@@ -1,7 +1,36 @@
-﻿@{
+﻿@using SerwisPogodowy.Models.ViewModels
+@model List<CityWheaterInformationVM>
+   
+@{
     ViewData["Title"] = "Miasta";
 }
 
 <div class="text-center">
     <h1 class="display-4">Miasta</h1>
+
+    <div class="d-flex flex-wrap">
+        @foreach (var localization in @Model)
+        {
+            <div class="card mb-2 mr-3" style="max-width: 18rem; margin-left: 1px solid black; margin-right: 1px solid black;">
+                <div class="card-header">@localization.City.Name</div>
+                <div class="card-body text-dark">
+
+                    @localization.City.CantryCode @localization.City.Voivodeship (Długość:@localization.City.Longitude, Szerokość:@localization.City.Latitude)
+                    
+
+                    <h5 class="card-title">Dark card title</h5>
+                    <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
+
+                   
+                    @using (Html.BeginForm("Details", "Task", FormMethod.Post, new { @class = "d-inline-block" }))
+                    {
+                        @Html.Hidden("id", @localization.City.Id)
+                        <input type="submit" value="Szczegoły" class="btn btn-primary btn-sm me-1" />
+                    }
+                </div>
+            </div>
+        }
+    </div>
+
+
 </div>

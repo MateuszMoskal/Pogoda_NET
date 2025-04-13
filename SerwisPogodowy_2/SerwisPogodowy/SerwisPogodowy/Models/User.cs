@@ -14,5 +14,7 @@ namespace SerwisPogodowy.Models
         public string Email { get; set; }
         [Required]
         public string Password { get; set; }
+
+        public ICollection<City> Cities { get; set; } = new List<City>();
     }
 }

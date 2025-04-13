@@ -1,0 +1,7 @@
+add-Migration InitialCreate
+Update-Database
+
+string sqlServerName = "DESKTOP-H0MGPLN";
+
+https://www.webserwer.pl/kontakt - wycofac
+K@cper123456

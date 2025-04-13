@@ -9,13 +9,20 @@ namespace SerwisPogodowy.Models
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
-        
+
         public string CantryCode { get; set; }
 
-        public string CityName { get; set; }
+        public string Voivodeship { get; set; }
+
+        public string Name { get; set; }
 
         public double Longitude { get; set; }
 
         public double Latitude { get; set; }
+
+        [Required]
+        public int UserId { get; set; }
+
+        public User User { get; set; }
     }
 }

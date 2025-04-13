@@ -14,9 +14,11 @@ namespace SerwisPogodowy.Service
 
         private readonly IHttpContextAccessor httpContextAccessor;
 
-        public UserService(DataBaseContext context, IHttpContextAccessor httpContextAccessor)
+        ISessionService userService;
+
+        public UserService(DataBaseContext context, ISessionService userService)
         {
-            this.httpContextAccessor = httpContextAccessor;
+            this.userService = userService;
             this.context = context;
         }
 
@@ -26,7 +28,7 @@ namespace SerwisPogodowy.Service
 
             if (userFromBase != null)
             {
-                UserFromSession = userFromBase;
+                userService.UserFromBase = userFromBase;
                 return true;
             }
             return false;
@@ -45,45 +47,9 @@ namespace SerwisPogodowy.Service
             userDataBase.Password = HashPassword(user.Password);
             context.Users.Add(userDataBase);
             context.SaveChanges();
-            UserFromSession = userDataBase;
 
+            userService.UserFromBase = userDataBase;
             return true;
-        }
-
-        public bool Create(UserLoginVM user)
-        {
-            User? userFromBase = context.Users.FirstOrDefault(u => u.Email == user.Email && u.Password == HashPassword(user.Password));
-
-            if (userFromBase != null)
-            {
-                UserFromSession = userFromBase;
-                return true;
-            }
-            return false;
-        }
-
-
-        private ISession Session => httpContextAccessor.HttpContext.Session;
-        public User UserFromSession 
-        {
-            get
-            {
-                User user = null;
-                byte[] bytes = null;
-                if (Session.TryGetValue("user", out bytes))
-                {
-                    string jsonString = Encoding.UTF8.GetString(bytes);
-                    user = JsonSerializer.Deserialize<User>(jsonString);
-                }
-
-                return user;
-            }
-            private set
-            {
-                string jsonString = JsonSerializer.Serialize(value);
-                byte[] bytes = Encoding.UTF8.GetBytes(jsonString);
-                Session.Set("user", bytes);
-            }
         }
 
         private string HashPassword(string password)

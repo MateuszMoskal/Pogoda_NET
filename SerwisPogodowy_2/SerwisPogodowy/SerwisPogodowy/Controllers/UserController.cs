@@ -8,10 +8,13 @@ namespace SerwisPogodowy.Controllers
     public class UserController : Controller
     {
         private IUserService userService;
+        private ISessionService sessionService;
 
-        public UserController(IUserService userService)
+
+        public UserController(IUserService userService, ISessionService sessionService)
         {
             this.userService = userService;
+            this.sessionService = sessionService;
         }
 
 
@@ -31,7 +34,7 @@ namespace SerwisPogodowy.Controllers
             {
                 ModelState.Remove("Login");
                 ModelState.Remove("Password");
-                return RedirectToAction("CurrentActivity", "ASD");//do poprawy
+                return RedirectToAction("Index", "City");//do poprawy
             }
             else
             {
@@ -39,7 +42,11 @@ namespace SerwisPogodowy.Controllers
                 return View(model);
             }
         }
-
+        public IActionResult LogOff()
+        {
+            sessionService.User = null;
+            return RedirectToAction("LogIn");
+        }
         public IActionResult Register()
         {
             return View(new UserRegisterVM());
