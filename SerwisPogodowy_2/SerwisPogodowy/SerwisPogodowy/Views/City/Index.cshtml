@@ -1,36 +1,64 @@
-﻿@using SerwisPogodowy.Models.ViewModels
-@model List<CityWheaterInformationVM>
-   
+﻿@model List<SerwisPogodowy.Models.ViewModels.CityWheaterInformationVM>
 @{
-    ViewData["Title"] = "Miasta";
+    ViewData["Title"] = "Moje lokalizacje";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Miasta</h1>
+<div class="container">
+    <h1>Moje lokalizacje</h1>
 
-    <div class="d-flex flex-wrap">
-        @foreach (var localization in @Model)
-        {
-            <div class="card mb-2 mr-3" style="max-width: 18rem; margin-left: 1px solid black; margin-right: 1px solid black;">
-                <div class="card-header">@localization.City.Name</div>
-                <div class="card-body text-dark">
-
-                    @localization.City.CantryCode @localization.City.Voivodeship (Długość:@localization.City.Longitude, Szerokość:@localization.City.Latitude)
-                    
-
-                    <h5 class="card-title">Dark card title</h5>
-                    <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
-
-                   
-                    @using (Html.BeginForm("Details", "Task", FormMethod.Post, new { @class = "d-inline-block" }))
-                    {
-                        @Html.Hidden("id", @localization.City.Id)
-                        <input type="submit" value="Szczegoły" class="btn btn-primary btn-sm me-1" />
-                    }
-                </div>
-            </div>
-        }
+    <div class="my-3">
+        <a asp-action="AddAsync" class="btn btn-primary">Dodaj nową lokalizację</a>
+        <a asp-action="RefreshWeather" class="btn btn-secondary">Odśwież dane pogodowe</a>
     </div>
 
-
+    @if (Model.Count == 0)
+    {
+        <div class="alert alert-info">
+            Nie masz jeszcze żadnych zapisanych lokalizacji. Kliknij "Dodaj nową lokalizację", aby rozpocząć.
+        </div>
+    }
+    else
+    {
+        <div class="row">
+            @foreach (var city in Model)
+            {
+                <div class="col-md-4 mb-4">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5>@city.City.Name, @city.City.CantryCode</h5>
+                            <form asp-action="DeleteCity" method="post">
+                                <input type="hidden" name="id" value="@city.City.Id" />
+                                <button type="submit" class="btn btn-sm btn-danger">Usuń</button>
+                            </form>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                @if (!string.IsNullOrEmpty(city.Icon))
+                                {
+                                    <img src="@city.IconUrl" alt="@city.Description" />
+                                }
+                                <div>
+                                    <h2>@city.Temperature.ToString("F1")°C</h2>
+                                    <p>Odczuwalna: @city.FeelsLike.ToString("F1")°C</p>
+                                </div>
+                            </div>
+                            <p>@city.Description</p>
+                            <hr />
+                            <div class="row">
+                                <div class="col-6">
+                                    <p><strong>Wilgotność:</strong> @city.Humidity%</p>
+                                </div>
+                                <div class="col-6">
+                                    <p><strong>Ciśnienie:</strong> @city.Pressure hPa</p>
+                                </div>
+                                <div class="col-6">
+                                    <p><strong>Wiatr:</strong> @city.WindSpeed m/s</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
 </div>

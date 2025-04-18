@@ -8,7 +8,7 @@ namespace SerwisPogodowy.Controllers
     public class CityController : Controller
     {
         private ICityService cityService;
-        
+
         public CityController(ICityService cityService)
         {
             this.cityService = cityService;
@@ -21,16 +21,17 @@ namespace SerwisPogodowy.Controllers
 
         public async Task<IActionResult> AddAsync(CitySearchVM? citySearch = null)
         {
-            if(citySearch == null)
+            if (citySearch == null)
             {
                 citySearch = new CitySearchVM();
             }
-            else if(!string.IsNullOrEmpty(citySearch.CityName))
+            else if (!string.IsNullOrEmpty(citySearch.CityName))
             {
                 citySearch.Cities = await cityService.SelectCity(citySearch.CityName);
             }
             return View(citySearch);
         }
+
         [HttpPost]
         public async Task<IActionResult> SelectCityAsync(string cityName)
         {
@@ -43,10 +44,23 @@ namespace SerwisPogodowy.Controllers
         [HttpPost]
         public async Task<IActionResult> AddCity(City city)
         {
-            
             await cityService.AddCityAsync(city);
             return RedirectToAction("Index", "City");
         }
 
+        // Dodaj nowe metody
+
+        [HttpPost]
+        public async Task<IActionResult> DeleteCity(int id)
+        {
+            await cityService.DeleteCityAsync(id);
+            return RedirectToAction("Index");
+        }
+
+        public async Task<IActionResult> RefreshWeather()
+        {
+            await cityService.UpdateWeatherDataForAllCitiesAsync();
+            return RedirectToAction("Index");
+        }
     }
 }
