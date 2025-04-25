@@ -1,0 +1,67 @@
+﻿@{
+    @model SerwisPogodowy.Models.ViewModels.CitySearchVM
+
+    ViewData["Title"] = "Miasta";
+}
+
+<div class="text-center">
+    <h1 class="display-4">Dodawanie miasta:</h1>
+
+    @using (Html.BeginForm("SelectCity", "City", FormMethod.Post, new { @class = "form-signin needs-validation" }))
+    {
+        <label for="inputEmail" class="sr-only">Nazwa szukanego miasta</label>
+        @Html.TextBoxFor(m => m.CityName, new { @class = "form-control needs-validation", id = "emailInput", placeholder = "Nazwa miasta", required = "required" })
+
+        <br />
+        <button class="btn btn-lg btn-primary btn-block" type="submit">Wyszukaj</button>
+
+    }
+
+    @if(Model.Cities!=null)
+    {
+        if (Model.Cities.Count==0)
+        {
+            <p>Nie znaleziono żadnego miasta o podanej nazwie</p>
+        }
+        else
+        {
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>Miasto</th>
+                        <th>Województwo</th>
+                        <th>Państwo</th>
+                        <th>Długość geograficzna</th>
+                        <th>Szerokość geograficzna</th>
+                        <th>Akcja</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var city in @Model.Cities)
+                    {
+                        <tr>
+                            <td>@city.Name</td>
+                            <td>@city.Voivodeship</td>
+                            <td>@city.CantryCode</td>
+                            <td>@city.Longitude</td>
+                            <td>@city.Latitude</td>
+                            <td>
+                                @using (Html.BeginForm("AddCity", "City", FormMethod.Post))
+                                {
+                                    @Html.HiddenFor(x => city.Name)
+                                    @Html.HiddenFor(x => city.Voivodeship)
+                                    @Html.HiddenFor(x => city.CantryCode)
+                                    @Html.HiddenFor(x => city.Longitude)
+                                    @Html.HiddenFor(x => city.Latitude)
+                                    <input type="submit" value="Wybierz" class="btn btn-primary" />
+                                }
+                            </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        }
+    }
+    
+
+</div>

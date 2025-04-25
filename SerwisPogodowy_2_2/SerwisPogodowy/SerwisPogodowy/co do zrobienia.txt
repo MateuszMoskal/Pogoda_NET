@@ -1,0 +1,12 @@
+1. Logowanie
+2. Wylogawnie
+3. Zmiana hasla
+4. Dodanie miasta do obserwowanych
+4.1. Pokazanie listy miast o podanej nazwie
+5. Pokazanie listy obserwowanych miast z aktualną pogodą
+6. Pokazanie prognozy krótkoterminowej - dla wybranej lokalizacji
+7. Pokazanie prognozy długoterminowej - dla wybranej lokalizacji
+
+
+
+System.InvalidOperationException: „Unable to resolve service for type 'Microsoft.AspNetCore.Session.ISessionStore' while attempting to activate 'Microsoft.AspNetCore.Session.SessionMiddleware'.”
