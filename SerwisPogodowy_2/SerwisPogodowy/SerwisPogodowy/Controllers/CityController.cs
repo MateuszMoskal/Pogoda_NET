@@ -66,11 +66,6 @@ namespace SerwisPogodowy.Controllers
             await cityService.DeleteCityAsync(id);
             return RedirectToAction("Index");
         }
-
-        public async Task<IActionResult> RefreshWeather()
-        {
-            await cityService.UpdateWeatherDataForAllCitiesAsync();
-            return RedirectToAction("Index");
-        }
+       
     }
 }

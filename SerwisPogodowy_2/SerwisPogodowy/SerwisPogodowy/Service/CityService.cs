@@ -53,29 +53,15 @@ namespace SerwisPogodowy.Service
                 CityWheaterInformationVM cityWheater = new CityWheaterInformationVM();
                 cityWheater.City = city;
 
-                // Sprawdź, czy istnieją dane pogodowe dla miasta
-                WeatherData? weatherData = await context.WeatherData
-                    .Where(w => w.CityId == city.Id)
-                    .OrderByDescending(w => w.LastUpdated)
-                    .FirstOrDefaultAsync();
-
-                // Jeśli dane nie istnieją lub są starsze niż 30 minut, pobierz nowe
-                if (weatherData == null || (DateTime.Now - weatherData.LastUpdated).TotalMinutes > 30)
-                {
-                    weatherData = await GetWeatherForCityAsync(city);
-                }
-
-                // Jeśli mamy dane pogodowe, uzupełnij ViewModel
-                if (weatherData != null)
-                {
-                    cityWheater.Temperature = weatherData.Temperature;
-                    cityWheater.FeelsLike = weatherData.FeelsLike;
-                    cityWheater.Humidity = weatherData.Humidity;
-                    cityWheater.Pressure = weatherData.Pressure;
-                    cityWheater.WindSpeed = weatherData.WindSpeed;
-                    cityWheater.Description = weatherData.Description;
-                    cityWheater.Icon = weatherData.Icon;
-                }
+                WeatherData weatherData = await GetWeatherForCityAsync(city);
+             
+                cityWheater.Temperature = weatherData.Temperature;
+                cityWheater.FeelsLike = weatherData.FeelsLike;
+                cityWheater.Humidity = weatherData.Humidity;
+                cityWheater.Pressure = weatherData.Pressure;
+                cityWheater.WindSpeed = weatherData.WindSpeed;
+                cityWheater.Description = weatherData.Description;
+                cityWheater.Icon = weatherData.Icon;
 
                 listCityWheater.Add(cityWheater);
             }
@@ -84,23 +70,69 @@ namespace SerwisPogodowy.Service
         }
 
         // NOWA METODA: Pobieranie danych pogodowych dla miasta
-        public async Task<WeatherData> GetWeatherForCityAsync(City city)
+        private async Task<WeatherData> GetWeatherForCityAsync(City city)
         {
-
-            WeatherData weatherData =await weatherRepository.GetWeatherForCityAsync(city);
-            //tutaj do poprawy zapis jak nie ma a jak jest to ewentualny update
-            context.WeatherData.Add(weatherData);
-            await context.SaveChangesAsync();
+            WeatherData? weather = await dataBaseRepository.RetriveWheaterDataAsync(city.Id, LastUpdate());
+            WeatherData weatherData;
+            if (weather == null)
+            {
+                weatherData = await weatherRepository.GetWeatherForCityAsync(city);
+                await dataBaseRepository.AddWheaterAsync(weatherData);
+                
+            }
+            else if(weather.LastUpdated< LastUpdate())
+            {
+                weatherData = await weatherRepository.GetWeatherForCityAsync(city);
+                weatherData.Id = weather.Id;
+                await dataBaseRepository.UpdateWeatherAsync(weatherData);
+            }
+            else
+            {
+                weatherData = weather;
+            }
 
             return weatherData;
         }
 
         public async Task<WheaterForecastVM> GetWeatherForWeekAsync(int cityId)
         {
-            City city = await context.Cities.FindAsync(cityId);
+            
 
-            List<WeatherData> weatherList = await weatherRepository.GetWeatherForWeekAsync(city);
+            bool dataIsUpdated = true;
 
+            List<WeatherData> weatherListFromaBase = new List<WeatherData>();
+
+            DateTime begin = LastUpdate();
+            DateTime end = begin.AddDays(7);//bez tej daty
+
+            List<WeatherData> weatherList = new List<WeatherData>();
+
+            List<WeatherData> weatherListFromBase = await dataBaseRepository.RetriveWheaterDataAsync(cityId, begin, end);
+            if (weatherListFromBase.Count < 40 || weatherListFromBase.Any(w => w.LastUpdated < LastUpdate()))
+            {
+                City? city = await dataBaseRepository.ReadCityAsync(cityId);
+                if(city!=null)
+                {
+                    weatherList = await weatherRepository.GetWeatherForWeekAsync(city);
+                    foreach(WeatherData weather in weatherList)
+                    {
+                        WeatherData? weatherBase = weatherListFromBase.Find(w => w.Date == weather.Date);
+                        if(weatherBase==null)
+                        {
+                            await dataBaseRepository.AddWheaterAsync(weather);
+                        }
+                        else if(weatherBase.LastUpdated< LastUpdate())
+                        {
+                            weather.Id = weatherBase.Id;
+                            await dataBaseRepository.UpdateWeatherAsync(weather);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                weatherList = weatherListFromBase;
+            }
             WheaterForecastVM wheaterForecastVM = new WheaterForecastVM();
 
             foreach (var weatherData in weatherList)
@@ -120,46 +152,15 @@ namespace SerwisPogodowy.Service
                 wheaterForecastVM.Forecast.Add(wheater);
             }
 
-            // Zapisz dane pogodowe do bazy
-            // context.WeatherData.Add(weatherData);
-            // await context.SaveChangesAsync();
 
             return wheaterForecastVM;
         }
-        
 
-        // NOWA METODA: Aktualizacja danych pogodowych dla wszystkich miast
-        public async Task UpdateWeatherDataForAllCitiesAsync()
-        {
-            int userId = sessionService.User.Id;
-            List<City> cities = await context.Cities
-                .Where(city => city.UserId == userId)
-                .ToListAsync();
-
-            foreach (var city in cities)
-            {
-                await GetWeatherForCityAsync(city);
-            }
-        }
 
         // NOWA METODA: Usunięcie miasta i jego danych pogodowych
         public async Task DeleteCityAsync(int cityId)
         {
-            int userId = sessionService.User.Id;
-            City city = await context.Cities
-                .FirstOrDefaultAsync(c => c.Id == cityId && c.UserId == userId);
-
-            if (city != null)
-            {
-                // Usuń również powiązane dane pogodowe
-                var weatherData = await context.WeatherData
-                    .Where(w => w.CityId == cityId)
-                    .ToListAsync();
-
-                context.WeatherData.RemoveRange(weatherData);
-                context.Cities.Remove(city);
-                await context.SaveChangesAsync();
-            }
+            await dataBaseRepository.DeleteCityAsync(cityId);
         }
         private DateTime LastUpdate()
         {

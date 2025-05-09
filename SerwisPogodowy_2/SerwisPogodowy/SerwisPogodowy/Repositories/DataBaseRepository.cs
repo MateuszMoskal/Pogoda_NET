@@ -1,6 +1,8 @@
-﻿using SerwisPogodowy.DataBase;
+﻿using Microsoft.EntityFrameworkCore;
+using SerwisPogodowy.DataBase;
 using SerwisPogodowy.Models;
 using SerwisPogodowy.Service;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace SerwisPogodowy.Repositories
 {
@@ -34,6 +36,11 @@ namespace SerwisPogodowy.Repositories
             return user;
         }
 
+        public async Task<City?> ReadCityAsync(int cityId)
+        {
+            return await context.Cities.FindAsync(cityId);
+        }
+
         public async Task AddCityAsync(City city, int userId)
         {
             User user = await context.Users.FindAsync(userId);
@@ -43,5 +50,54 @@ namespace SerwisPogodowy.Repositories
             context.Cities.Add(city);
             await context.SaveChangesAsync();
         }
+
+
+
+        public async Task DeleteCityAsync(int cityId)
+        {
+            
+            City? city = await context.Cities.FirstOrDefaultAsync(c => c.Id == cityId);
+
+            if (city != null)
+            {
+                // Usuń również powiązane dane pogodowe
+                var weatherData = await context.WeatherData
+                    .Where(w => w.CityId == cityId)
+                    .ToListAsync();
+
+                context.WeatherData.RemoveRange(weatherData);
+                context.Cities.Remove(city);
+                await context.SaveChangesAsync();
+            }
+        }
+
+        public async Task<WeatherData?> RetriveWheaterDataAsync(int cityId, DateTime date)
+        {
+            return context.WeatherData.Where(w => w.CityId == cityId && w.Date == date).FirstOrDefault();
+            
+        }
+        public async Task<List<WeatherData>> RetriveWheaterDataAsync(int cityId, DateTime begin, DateTime end)
+        {
+            return await context.WeatherData.Where(w => w.CityId == cityId && begin <= w.Date && w.Date < end).ToListAsync();
+
+        }
+
+        public async Task AddWheaterAsync(WeatherData weather)
+        {
+            context.WeatherData.Add(weather);
+            await context.SaveChangesAsync();
+        }
+
+        public async Task UpdateWeatherAsync(WeatherData weather)
+        {
+            var existingWeather = await context.WeatherData.FindAsync(weather.Id);
+
+            if (existingWeather != null)
+            {
+                context.Entry(existingWeather).CurrentValues.SetValues(weather);
+                await context.SaveChangesAsync();
+            }
+        }
+
     }
 }

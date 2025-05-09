@@ -10,17 +10,14 @@ namespace SerwisPogodowy.Models.ViewModels
         {
             get
             {
-                List<string> uniqueDays = new List<string>();
+                List<string> times = new List<string>();
                 foreach (var item in Forecast)
                 {
-                    string dayInPolish = item.Date.ToString("dddd", new System.Globalization.CultureInfo("pl-PL"));
-                    if (!uniqueDays.Contains(dayInPolish))
-                    {
-                        uniqueDays.Add(dayInPolish);
-                    }
+                    string dayWithTimeInPolish = item.Date.ToString("dddd HH:mm", new System.Globalization.CultureInfo("pl-PL"));
+                    times.Add(dayWithTimeInPolish);
                 }
                 // Generowanie tablicy JSON z pojedynczymi cudzysłowami
-                return Newtonsoft.Json.JsonConvert.SerializeObject(uniqueDays);
+                return Newtonsoft.Json.JsonConvert.SerializeObject(times);
             }
         }
 
