@@ -25,7 +25,6 @@ namespace SerwisPogodowy.DataBase
                 .HasForeignKey(s => s.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Możesz dodać również konfigurację dla WeatherData
             modelBuilder.Entity<WeatherData>()
                 .HasOne(w => w.City)
                 .WithMany(c => c.WeatherData)

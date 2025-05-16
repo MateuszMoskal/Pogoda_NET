@@ -4,6 +4,7 @@ namespace SerwisPogodowy.Models.ViewModels
 {
     public class WheaterForecastVM
     {
+        public City City { get; set; }
         public List<WheaterVM> Forecast { get; set; } = new List<WheaterVM>();
 
         public string Labels

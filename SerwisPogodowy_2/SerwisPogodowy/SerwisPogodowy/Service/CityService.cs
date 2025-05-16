@@ -96,7 +96,18 @@ namespace SerwisPogodowy.Service
 
         public async Task<WheaterForecastVM> GetWeatherForWeekAsync(int cityId)
         {
-            
+            WheaterForecastVM wheaterForecastVM = new WheaterForecastVM();
+
+            City? city = await dataBaseRepository.ReadCityAsync(cityId);
+            if (city == null)
+            {
+                city = new City();
+                city.Name = "MIEJSCOWOŚĆ NIE ODNALEZIONA";
+                city.CantryCode = "";
+                wheaterForecastVM.City = city;
+                return wheaterForecastVM;
+            }
+            wheaterForecastVM.City = city;
 
             bool dataIsUpdated = true;
 
@@ -110,30 +121,27 @@ namespace SerwisPogodowy.Service
             List<WeatherData> weatherListFromBase = await dataBaseRepository.RetriveWheaterDataAsync(cityId, begin, end);
             if (weatherListFromBase.Count < 40 || weatherListFromBase.Any(w => w.LastUpdated < LastUpdate()))
             {
-                City? city = await dataBaseRepository.ReadCityAsync(cityId);
-                if(city!=null)
+                weatherList = await weatherRepository.GetWeatherForWeekAsync(city);
+                foreach (WeatherData weather in weatherList)
                 {
-                    weatherList = await weatherRepository.GetWeatherForWeekAsync(city);
-                    foreach(WeatherData weather in weatherList)
+                    WeatherData? weatherBase = weatherListFromBase.Find(w => w.Date == weather.Date);
+                    if (weatherBase == null)
                     {
-                        WeatherData? weatherBase = weatherListFromBase.Find(w => w.Date == weather.Date);
-                        if(weatherBase==null)
-                        {
-                            await dataBaseRepository.AddWheaterAsync(weather);
-                        }
-                        else if(weatherBase.LastUpdated< LastUpdate())
-                        {
-                            weather.Id = weatherBase.Id;
-                            await dataBaseRepository.UpdateWeatherAsync(weather);
-                        }
+                        await dataBaseRepository.AddWheaterAsync(weather);
+                    }
+                    else if (weatherBase.LastUpdated < LastUpdate())
+                    {
+                        weather.Id = weatherBase.Id;
+                        await dataBaseRepository.UpdateWeatherAsync(weather);
                     }
                 }
+
             }
             else
             {
                 weatherList = weatherListFromBase;
             }
-            WheaterForecastVM wheaterForecastVM = new WheaterForecastVM();
+
 
             foreach (var weatherData in weatherList)
             {
