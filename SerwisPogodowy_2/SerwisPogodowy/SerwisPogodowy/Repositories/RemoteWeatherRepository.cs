@@ -8,7 +8,7 @@ namespace SerwisPogodowy.Repositories
     public class RemoteWeatherRepository : IRemoteWeatherRepository
     {
         private static readonly HttpClient client = new HttpClient();
-        private const string API_CODE = "xxx";
+        private const string API_CODE = "731d5f5250da097e6f57df58e3feea33";
 
         public async Task<List<City>> GetCitiesAsync(string cityName)
         {
