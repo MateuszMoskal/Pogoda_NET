@@ -1,6 +1,7 @@
 using SerwisPogodowy.DataBase;
 using SerwisPogodowy.Repositories;
 using SerwisPogodowy.Service;
+using SerwisPogodowy.Models.Configuration;
 using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -22,6 +23,10 @@ builder.Services.AddSwaggerGen(c =>
         Description = "API dla serwisu pogodowego"
     });
 });
+
+// NOWE: Rejestracja konfiguracji WeatherApi
+builder.Services.Configure<WeatherApiSettings>(
+    builder.Configuration.GetSection("WeatherApi"));
 
 builder.Services.AddDbContext<DataBaseContext>();
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
@@ -51,7 +56,7 @@ else
     app.UseSwaggerUI(c =>
     {
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "Serwis Pogodowy API v1");
-        c.RoutePrefix = "swagger"; // Swagger bêdzie dostêpny pod /swagger
+        c.RoutePrefix = "swagger";
     });
 }
 
@@ -61,12 +66,11 @@ app.UseRouting();
 app.UseAuthorization();
 app.MapStaticAssets();
 
-// Mapuj zarówno kontrolery MVC jak i API
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}")
     .WithStaticAssets();
 
-app.MapControllers(); // Dodaj to dla API controllers
+app.MapControllers();
 
 app.Run();

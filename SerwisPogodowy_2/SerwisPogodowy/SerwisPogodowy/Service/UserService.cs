@@ -1,9 +1,6 @@
-﻿using Microsoft.AspNetCore.Identity.Data;
-using System.Text.Json;
-using SerwisPogodowy.Models;
+﻿using System.Security.Cryptography;
 using System.Text;
-using SerwisPogodowy.DataBase;
-using System.Security.Cryptography;
+using SerwisPogodowy.Models;
 using SerwisPogodowy.Models.ViewModels;
 using SerwisPogodowy.Repositories;
 
@@ -11,39 +8,70 @@ namespace SerwisPogodowy.Service
 {
     public class UserService : IUserService
     {
-        ISessionService userService;
-        IDataBaseRepository dataBaseRepository;
+        private readonly ISessionService sessionService;
+        private readonly IDataBaseRepository dataBaseRepository;
 
-        public UserService(ISessionService userService, IDataBaseRepository dataBaseRepository)
+        public UserService(ISessionService sessionService, IDataBaseRepository dataBaseRepository)
         {
-            this.userService = userService;
+            this.sessionService = sessionService;
             this.dataBaseRepository = dataBaseRepository;
         }
 
         public bool LogIn(UserLoginVM user)
         {
-            User? userFromBase = dataBaseRepository.ReadUser(user.Email, HashPassword(user.Password));
+            // Podstawowa walidacja
+            if (user == null || string.IsNullOrWhiteSpace(user.Email) || string.IsNullOrWhiteSpace(user.Password))
+                return false;
 
-            if (userFromBase != null)
+            try
             {
-                userService.UserFromBase = userFromBase;
-                return true;
+                User? userFromBase = dataBaseRepository.ReadUser(user.Email, HashPassword(user.Password));
+
+                if (userFromBase != null)
+                {
+                    sessionService.UserFromBase = userFromBase;
+                    return true;
+                }
+                return false;
             }
-            return false;
+            catch
+            {
+                return false;
+            }
         }
 
         public bool Register(UserRegisterVM user)
         {
-            if (dataBaseRepository.UserExiest(user.Email))
+            // Podstawowa walidacja
+            if (user == null || string.IsNullOrWhiteSpace(user.Email) || string.IsNullOrWhiteSpace(user.Password))
             {
-                user.ErrorMessage = "Uzytkownik o podanym loginie jest już zarejestrowany";
+                user.ErrorMessage = "Email i hasło są wymagane";
                 return false;
             }
 
-            User userDataBase = dataBaseRepository.CreateUser(user.Email, HashPassword(user.Password));
+            if (user.Password != user.PasswordConfirm)
+            {
+                user.ErrorMessage = "Hasła muszą być identyczne";
+                return false;
+            }
 
-            userService.UserFromBase = userDataBase;
-            return true;
+            try
+            {
+                if (dataBaseRepository.UserExiest(user.Email))
+                {
+                    user.ErrorMessage = "Użytkownik o podanym emailu już istnieje";
+                    return false;
+                }
+
+                User userDataBase = dataBaseRepository.CreateUser(user.Email, HashPassword(user.Password));
+                sessionService.UserFromBase = userDataBase;
+                return true;
+            }
+            catch
+            {
+                user.ErrorMessage = "Wystąpił błąd podczas rejestracji";
+                return false;
+            }
         }
 
         private string HashPassword(string password)
@@ -51,7 +79,6 @@ namespace SerwisPogodowy.Service
             using (SHA256 sha256Hash = SHA256.Create())
             {
                 byte[] bytes = sha256Hash.ComputeHash(Encoding.UTF8.GetBytes(password));
-
                 StringBuilder builder = new StringBuilder();
                 foreach (byte b in bytes)
                 {
@@ -60,7 +87,5 @@ namespace SerwisPogodowy.Service
                 return builder.ToString();
             }
         }
-
-        
     }
 }
