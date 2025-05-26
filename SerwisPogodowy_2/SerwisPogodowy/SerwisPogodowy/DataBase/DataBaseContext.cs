@@ -12,8 +12,8 @@ namespace SerwisPogodowy.DataBase
         {
             base.OnConfiguring(optionsBuilder);
             //string sqlServerName = "Twoja nazwa SQL Servera";
-            string sqlServerName = "LAPTOP-3840J1OF";
-            //string sqlServerName = "DESKTOP-GT6FNE0";
+            //string sqlServerName = "LAPTOP-3840J1OF";
+            string sqlServerName = "DESKTOP-GT6FNE0";
             string dataBaseName = "WeatherService";
             optionsBuilder.UseSqlServer($"Server={sqlServerName};Database={dataBaseName};Trusted_Connection=true;TrustServerCertificate=true;");
         }

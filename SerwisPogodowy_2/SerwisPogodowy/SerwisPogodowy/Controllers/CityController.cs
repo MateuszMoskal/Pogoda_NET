@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿// Controllers/CityController.cs - POPRAWIONY
+using Microsoft.AspNetCore.Mvc;
 using SerwisPogodowy.Models;
 using SerwisPogodowy.Models.ViewModels;
 using SerwisPogodowy.Service;
@@ -7,65 +8,171 @@ namespace SerwisPogodowy.Controllers
 {
     public class CityController : Controller
     {
-        private ICityService cityService;
+        private readonly ICityService cityService;
+        private readonly ISessionService sessionService;
 
-        public CityController(ICityService cityService)
+        public CityController(ICityService cityService, ISessionService sessionService)
         {
             this.cityService = cityService;
+            this.sessionService = sessionService;
+        }
+
+        // Sprawdź logowanie
+        private bool CheckLogin()
+        {
+            if (!sessionService.IsLogged)
+            {
+                TempData["ErrorMessage"] = "Musisz być zalogowany";
+                return false;
+            }
+            return true;
         }
 
         public async Task<IActionResult> IndexAsync()
         {
-            return View(await cityService.ReadAllLocalizationsAsync());
+            if (!CheckLogin())
+                return RedirectToAction("LogIn", "User");
+
+            try
+            {
+                return View(await cityService.ReadAllLocalizationsAsync());
+            }
+            catch
+            {
+                TempData["ErrorMessage"] = "Wystąpił błąd podczas pobierania danych";
+                return View(new List<CityWheaterInformationVM>());
+            }
         }
 
+        // GET: Wyświetl formularz wyszukiwania
         public async Task<IActionResult> AddAsync(CitySearchVM? citySearch = null)
         {
+            if (!CheckLogin())
+                return RedirectToAction("LogIn", "User");
+
             if (citySearch == null)
             {
                 citySearch = new CitySearchVM();
             }
-            else if (!string.IsNullOrEmpty(citySearch.CityName))
+            else if (!string.IsNullOrWhiteSpace(citySearch.CityName))
             {
-                citySearch.Cities = await cityService.SelectCity(citySearch.CityName);
+                try
+                {
+                    citySearch.Cities = await cityService.SelectCity(citySearch.CityName.Trim());
+                }
+                catch
+                {
+                    TempData["ErrorMessage"] = "Błąd podczas wyszukiwania miasta";
+                }
             }
             return View(citySearch);
         }
 
+        // POST: Wyszukaj miasta - POPRAWIONA NAZWA METODY
         [HttpPost]
-        public async Task<IActionResult> SelectCityAsync(string cityName)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SelectCity(string cityName)
         {
-            List<City> cities = new List<City>();
-            CitySearchVM citySearch = new CitySearchVM();
-            citySearch.CityName = cityName;
-            return RedirectToAction("Add", "City", citySearch);
+            if (!CheckLogin())
+                return RedirectToAction("LogIn", "User");
+
+            // Podstawowa walidacja
+            if (string.IsNullOrWhiteSpace(cityName))
+            {
+                TempData["ErrorMessage"] = "Nazwa miasta jest wymagana";
+                return RedirectToAction("Add");
+            }
+
+            if (cityName.Trim().Length < 2)
+            {
+                TempData["ErrorMessage"] = "Nazwa miasta musi mieć co najmniej 2 znaki";
+                return RedirectToAction("Add");
+            }
+
+            // Przekieruj do Add z parametrem wyszukiwania
+            var citySearch = new CitySearchVM { CityName = cityName.Trim() };
+            return RedirectToAction("Add", citySearch);
         }
 
+        // POST: Dodaj miasto do bazy
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> AddCity(City city)
         {
-            await cityService.AddCityAsync(city);
-            return RedirectToAction("Index", "City");
-        }
-        [HttpPost]
-        public async Task<IActionResult> WeatherForecast(int id)
-        {
-            WheaterForecastVM wheaterForecastVM = new WheaterForecastVM();
-            WheaterForecastVM forecast = await cityService.GetWeatherForWeekAsync(id);
-          //  await cityService.DeleteCityAsync(id);
-            return View(forecast);
-        }
+            if (!CheckLogin())
+                return RedirectToAction("LogIn", "User");
 
-        
+            // Podstawowa walidacja
+            if (string.IsNullOrWhiteSpace(city.Name))
+            {
+                TempData["ErrorMessage"] = "Nazwa miasta jest wymagana";
+                return RedirectToAction("Add");
+            }
 
-        // Dodaj nowe metody
+            try
+            {
+                await cityService.AddCityAsync(city);
+                TempData["SuccessMessage"] = "Miasto zostało dodane";
+            }
+            catch
+            {
+                TempData["ErrorMessage"] = "Błąd podczas dodawania miasta";
+            }
 
-        [HttpPost]
-        public async Task<IActionResult> DeleteCity(int id)
-        {
-            await cityService.DeleteCityAsync(id);
             return RedirectToAction("Index");
         }
-       
+
+        // POST: Wyświetl prognozę pogody
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> WeatherForecast(int id)
+        {
+            if (!CheckLogin())
+                return RedirectToAction("LogIn", "User");
+
+            if (id <= 0)
+            {
+                TempData["ErrorMessage"] = "Nieprawidłowe ID miasta";
+                return RedirectToAction("Index");
+            }
+
+            try
+            {
+                var forecast = await cityService.GetWeatherForWeekAsync(id);
+                return View(forecast);
+            }
+            catch
+            {
+                TempData["ErrorMessage"] = "Błąd podczas pobierania prognozy";
+                return RedirectToAction("Index");
+            }
+        }
+
+        // POST: Usuń miasto
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteCity(int id)
+        {
+            if (!CheckLogin())
+                return RedirectToAction("LogIn", "User");
+
+            if (id <= 0)
+            {
+                TempData["ErrorMessage"] = "Nieprawidłowe ID miasta";
+                return RedirectToAction("Index");
+            }
+
+            try
+            {
+                await cityService.DeleteCityAsync(id);
+                TempData["SuccessMessage"] = "Miasto zostało usunięte";
+            }
+            catch
+            {
+                TempData["ErrorMessage"] = "Błąd podczas usuwania miasta";
+            }
+
+            return RedirectToAction("Index");
+        }
     }
 }

@@ -1,18 +1,26 @@
 ﻿using Newtonsoft.Json.Linq;
 using SerwisPogodowy.Models;
 using SerwisPogodowy.Models.ViewModels;
-using System.Collections.Generic;
+using SerwisPogodowy.Models.Configuration;
+using Microsoft.Extensions.Options;
 
 namespace SerwisPogodowy.Repositories
 {
     public class RemoteWeatherRepository : IRemoteWeatherRepository
     {
         private static readonly HttpClient client = new HttpClient();
-        private const string API_CODE = "xxx";
+        private readonly WeatherApiSettings _weatherApiSettings;
+
+        // NOWE: Dependency Injection konfiguracji
+        public RemoteWeatherRepository(IOptions<WeatherApiSettings> weatherApiSettings)
+        {
+            _weatherApiSettings = weatherApiSettings.Value;
+        }
 
         public async Task<List<City>> GetCitiesAsync(string cityName)
         {
-            string url = $"http://api.openweathermap.org/geo/1.0/direct?q={cityName}&limit=5&appid={API_CODE}";
+            // NOWE: Użycie konfiguracji zamiast stałej
+            string url = $"{_weatherApiSettings.BaseUrl}/geo/1.0/direct?q={cityName}&limit=5&appid={_weatherApiSettings.ApiKey}";
 
             try
             {
@@ -45,10 +53,10 @@ namespace SerwisPogodowy.Repositories
             }
         }
 
-
         public async Task<WeatherData> GetWeatherForCityAsync(City city)
         {
-            string url = $"https://api.openweathermap.org/data/2.5/weather?lat={city.Latitude}&lon={city.Longitude}&units=metric&appid={API_CODE}&lang=pl";
+            // NOWE: Użycie konfiguracji
+            string url = $"{_weatherApiSettings.BaseUrl}/data/2.5/weather?lat={city.Latitude}&lon={city.Longitude}&units=metric&appid={_weatherApiSettings.ApiKey}&lang=pl";
 
             try
             {
@@ -76,12 +84,12 @@ namespace SerwisPogodowy.Repositories
                 Console.WriteLine($"Błąd podczas pobierania danych pogodowych: {ex.Message}");
                 return null;
             }
-
         }
 
         public async Task<List<WeatherData>> GetWeatherForWeekAsync(City city)
         {
-            string url = $"https://api.openweathermap.org/data/2.5/forecast?lat={city.Latitude}&lon={city.Longitude}&appid={API_CODE}";
+            // NOWE: Użycie konfiguracji
+            string url = $"{_weatherApiSettings.BaseUrl}/data/2.5/forecast?lat={city.Latitude}&lon={city.Longitude}&appid={_weatherApiSettings.ApiKey}";
 
             WheaterForecastVM wheaterForecastVM = new WheaterForecastVM();
 
@@ -110,7 +118,6 @@ namespace SerwisPogodowy.Repositories
             return weatherList;
         }
 
-
         private DateTime LastUpdate()
         {
             DateTime now = DateTime.Now;
@@ -125,7 +132,6 @@ namespace SerwisPogodowy.Repositories
         {
             double temperature = jtokenTemperature?.ToObject<double>() ?? 0;
             return temperature - 273.15;
-
         }
     }
 }

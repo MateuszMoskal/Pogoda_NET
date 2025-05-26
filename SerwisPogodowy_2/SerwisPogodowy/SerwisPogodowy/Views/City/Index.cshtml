@@ -6,6 +6,23 @@
 <div class="container">
     <h1>Moje lokalizacje</h1>
 
+    <!-- Komunikaty -->
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
     <div class="my-3">
         <a asp-action="Add" class="btn btn-primary">Dodaj nową lokalizację</a>
         <a asp-action="Index" class="btn btn-secondary">Odśwież dane pogodowe</a>
@@ -33,14 +50,21 @@
                             {
                                 <h5>@city.City.Name, @city.City.CantryCode</h5>
                             }
-                            <form asp-action="WeatherForecast" method="post">
-                                <input type="hidden" name="id" value="@city.City.Id" />
-                                <button type="submit" class="btn btn-sm btn-success">Prognoza</button>
-                            </form>
-                            <form asp-action="DeleteCity" method="post">
-                                <input type="hidden" name="id" value="@city.City.Id" />
-                                <button type="submit" class="btn btn-sm btn-danger">Usuń</button>
-                            </form>
+                            <div>
+                                <form asp-action="WeatherForecast" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@city.City.Id" />
+                                    <button type="submit" class="btn btn-sm btn-success">Prognoza</button>
+                                </form>
+                                <form asp-action="DeleteCity" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@city.City.Id" />
+                                    <button type="submit" class="btn btn-sm btn-danger"
+                                            onclick="return confirm('Czy na pewno chcesz usunąć to miasto?')">
+                                        Usuń
+                                    </button>
+                                </form>
+                            </div>
                         </div>
                         <div class="card-body">
                             <div class="d-flex align-items-center">

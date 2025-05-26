@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using SerwisPogodowy.Models;
 using SerwisPogodowy.Models.ViewModels;
 using SerwisPogodowy.Service;
 
@@ -7,9 +6,8 @@ namespace SerwisPogodowy.Controllers
 {
     public class UserController : Controller
     {
-        private IUserService userService;
-        private ISessionService sessionService;
-
+        private readonly IUserService userService;
+        private readonly ISessionService sessionService;
 
         public UserController(IUserService userService, ISessionService sessionService)
         {
@@ -17,23 +15,32 @@ namespace SerwisPogodowy.Controllers
             this.sessionService = sessionService;
         }
 
-
         public IActionResult LogIn()
         {
+            // Jeśli już zalogowany, przekieruj
+            if (sessionService.IsLogged)
+                return RedirectToAction("Index", "City");
+
             return View(new UserLoginVM());
         }
+
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public IActionResult LogIn(UserLoginVM model)
         {
+            // Sprawdź czy już zalogowany
+            if (sessionService.IsLogged)
+                return RedirectToAction("Index", "City");
+
+            // Walidacja modelu
             if (!ModelState.IsValid)
-            {
                 return View(model);
-            }
+
+            // Podstawowa sanityzacja
+            model.Email = model.Email?.Trim().ToLowerInvariant() ?? "";
 
             if (userService.LogIn(model))
             {
-                ModelState.Remove("Login");
-                ModelState.Remove("Password");
                 return RedirectToAction("Index", "City");
             }
             else
@@ -42,42 +49,46 @@ namespace SerwisPogodowy.Controllers
                 return View(model);
             }
         }
+
         public IActionResult LogOff()
         {
             sessionService.User = null;
             return RedirectToAction("LogIn");
         }
+
         public IActionResult Register()
         {
+            // Jeśli już zalogowany, przekieruj
+            if (sessionService.IsLogged)
+                return RedirectToAction("Index", "City");
+
             return View(new UserRegisterVM());
         }
 
-
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public IActionResult Register(UserRegisterVM model)
         {
-            if (!ModelState.IsValid)
-            {
-                return View(model);
-            }
+            // Sprawdź czy już zalogowany
+            if (sessionService.IsLogged)
+                return RedirectToAction("Index", "City");
 
-            if (model.Password != model.PasswordConfirm)
-            {
-                model.ErrorMessage = "hasło jest różne od powtorzonego hasła";
+            // Walidacja modelu
+            if (!ModelState.IsValid)
                 return View(model);
-            }
+
+            // Podstawowa sanityzacja
+            model.Email = model.Email?.Trim().ToLowerInvariant() ?? "";
 
             if (userService.Register(model))
             {
-                ModelState.Remove("Login");
-                ModelState.Remove("Password");
-                return RedirectToAction("CurrentActivity", "ASD");//do poprawy
+                return RedirectToAction("Index", "City");
             }
             else
             {
+                // ErrorMessage będzie ustawiony w serwisie
                 return View(model);
             }
         }
-
     }
 }

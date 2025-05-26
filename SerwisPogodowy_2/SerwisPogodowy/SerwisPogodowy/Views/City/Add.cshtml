@@ -1,67 +1,129 @@
-﻿@{
-    @model SerwisPogodowy.Models.ViewModels.CitySearchVM
-
-    ViewData["Title"] = "Miasta";
+﻿@model SerwisPogodowy.Models.ViewModels.CitySearchVM
+@{
+    ViewData["Title"] = "Dodaj miasto";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Dodawanie miasta:</h1>
+<div class="container">
+    <h1 class="display-4">Dodawanie miasta</h1>
 
-    @using (Html.BeginForm("SelectCity", "City", FormMethod.Post, new { @class = "form-signin needs-validation" }))
+    <!-- Komunikaty -->
+    @if (TempData["ErrorMessage"] != null)
     {
-        <label for="inputEmail" class="sr-only">Nazwa szukanego miasta</label>
-        @Html.TextBoxFor(m => m.CityName, new { @class = "form-control needs-validation", id = "emailInput", placeholder = "Nazwa miasta", required = "required" })
-
-        <br />
-        <button class="btn btn-lg btn-primary btn-block" type="submit">Wyszukaj</button>
-
+        <div class="alert alert-danger alert-dismissible">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
     }
 
-    @if(Model.Cities!=null)
+    @if (TempData["SuccessMessage"] != null)
     {
-        if (Model.Cities.Count==0)
+        <div class="alert alert-success alert-dismissible">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- POPRAWIONY FORMULARZ - SelectCity zamiast SelectCityAsync -->
+    @using (Html.BeginForm("SelectCity", "City", FormMethod.Post))
+    {
+        @Html.AntiForgeryToken()
+
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="form-group mb-3">
+                    <label for="cityName">Nazwa miasta</label>
+                    <input type="text" name="cityName" value="@Model.CityName"
+                           class="form-control"
+                           placeholder="Wprowadź nazwę miasta"
+                           required
+                           minlength="2"
+                           maxlength="50" />
+                </div>
+
+                <button class="btn btn-primary" type="submit">
+                    <i class="fas fa-search"></i> Wyszukaj
+                </button>
+            </div>
+        </div>
+    }
+
+    @if (Model.Cities != null)
+    {
+        if (Model.Cities.Count == 0)
         {
-            <p>Nie znaleziono żadnego miasta o podanej nazwie</p>
+            <div class="alert alert-info mt-4">
+                <i class="fas fa-info-circle"></i> Nie znaleziono żadnego miasta o podanej nazwie: "<strong>@Model.CityName</strong>"
+            </div>
         }
         else
         {
-            <table class="table table-striped table-hover">
-                <thead>
-                    <tr>
-                        <th>Miasto</th>
-                        <th>Województwo</th>
-                        <th>Państwo</th>
-                        <th>Długość geograficzna</th>
-                        <th>Szerokość geograficzna</th>
-                        <th>Akcja</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var city in @Model.Cities)
-                    {
-                        <tr>
-                            <td>@city.Name</td>
-                            <td>@city.Voivodeship</td>
-                            <td>@city.CantryCode</td>
-                            <td>@city.Longitude</td>
-                            <td>@city.Latitude</td>
-                            <td>
-                                @using (Html.BeginForm("AddCity", "City", FormMethod.Post))
-                                {
-                                    @Html.HiddenFor(x => city.Name)
-                                    @Html.HiddenFor(x => city.Voivodeship)
-                                    @Html.HiddenFor(x => city.CantryCode)
-                                    @Html.HiddenFor(x => city.Longitude)
-                                    @Html.HiddenFor(x => city.Latitude)
-                                    <input type="submit" value="Wybierz" class="btn btn-primary" />
-                                }
-                            </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+            <div class="mt-4">
+                <h3>Znalezione miasta dla: "<strong>@Model.CityName</strong>"</h3>
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Miasto</th>
+                                <th>Województwo/Stan</th>
+                                <th>Państwo</th>
+                                <th>Współrzędne</th>
+                                <th>Akcja</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var city in Model.Cities)
+                            {
+                                <tr>
+                                    <td><strong>@city.Name</strong></td>
+                                    <td>@(city.Voivodeship ?? "-")</td>
+                                    <td>
+                                        <span class="badge bg-secondary">@city.CantryCode</span>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">
+                                            @city.Latitude.ToString("F4"), @city.Longitude.ToString("F4")
+                                        </small>
+                                    </td>
+                                    <td>
+                                        @using (Html.BeginForm("AddCity", "City", FormMethod.Post))
+                                        {
+                                            @Html.AntiForgeryToken()
+                                            @Html.Hidden("Name", city.Name)
+                                            @Html.Hidden("Voivodeship", city.Voivodeship)
+                                            @Html.Hidden("CantryCode", city.CantryCode)
+                                            @Html.Hidden("Longitude", city.Longitude)
+                                            @Html.Hidden("Latitude", city.Latitude)
+                                            <button type="submit" class="btn btn-success btn-sm">
+                                                <i class="fas fa-plus"></i> Wybierz
+                                            </button>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         }
     }
-    
 
+    <div class="mt-4">
+        <a asp-action="Index" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Powrót do listy miast
+        </a>
+    </div>
 </div>
+
+@section Scripts {
+    <script>
+        // Proste sprawdzenie długości przed wysłaniem
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const cityName = document.querySelector('input[name="cityName"]').value.trim();
+            if (cityName.length < 2) {
+                e.preventDefault();
+                alert('Nazwa miasta musi mieć co najmniej 2 znaki');
+                return false;
+            }
+        });
+    </script>
+}
